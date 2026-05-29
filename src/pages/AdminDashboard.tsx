@@ -809,7 +809,7 @@ function ConfigTab() {
           <InputField label="Slogan" value={form.slogan} onChange={e => setForm(f => ({ ...f, slogan: e.target.value }))} placeholder="Ex: O melhor sabor!" />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <InputField label="WhatsApp da Loja (com DDD)" value={form.whatsapp || '+55 '} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value.startsWith('+55') ? e.target.value : '+55 ' + e.target.value.replace('+55', '') }))} placeholder="5511999999999" />
+          <InputField label="WhatsApp da Loja (com DDD)" value={form.whatsapp?.startsWith('+55') ? form.whatsapp : '+55 ' + (form.whatsapp || '')} onChange={e => { let v = e.target.value; if (!v.startsWith('+55 ')) v = '+55 ' + v.replace(/^\+?55\s*/, ''); setForm(f => ({...f, whatsapp: v})); }} placeholder="5511999999999" />
           <InputField label="Chave PIX" value={form.pixKey || ''} onChange={e => setForm(f => ({ ...f, pixKey: e.target.value }))} placeholder="Sua chave PIX" />
         </div>
         <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">

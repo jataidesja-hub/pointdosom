@@ -752,16 +752,16 @@ function BannersTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState<Omit<Banner, 'id'>>({
+  const [form, setForm] = useState<{ title: string; description: string; imageUrl: string; link: string; type: 'promo'|'sorteio'|'aviso'; expiresAt: string; active: boolean }>({
     title: '', description: '', imageUrl: '', link: '',
-    type: 'promo', expiresAt: null, active: true
+    type: 'promo', expiresAt: '', active: true
   });
 
   const handleSave = () => {
     if (!form.title) return alert('Preencha o título!');
-    addBanner({ ...form, expiresAt: form.expiresAt || null });
+    addBanner({ ...form, expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null });
     setModalOpen(false);
-    setForm({ title: '', description: '', imageUrl: '', link: '', type: 'promo', expiresAt: null, active: true });
+    setForm({ title: '', description: '', imageUrl: '', link: '', type: 'promo', expiresAt: '', active: true });
   };
 
   const TYPE_LABELS: Record<string, string> = { promo: 'Promoção', sorteio: 'Sorteio', aviso: 'Aviso' };
@@ -823,7 +823,7 @@ function BannersTab() {
           <InputField label="Título" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: SORTEIO DE UM SUBWOOFER!" />
           <TextArea label="Descrição" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalhe a promoção ou regras do sorteio..." />
           <InputField label="Link (Opcional)" type="url" value={form.link || ''} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="https://..." />
-          <InputField label="Data Limite / Fim do Sorteio (Opcional)" type="datetime-local" value={form.expiresAt ? form.expiresAt.slice(0,16) : ''} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null }))} />
+          <InputField label="Data Limite / Fim do Sorteio (Opcional)" type="datetime-local" value={form.expiresAt || ''} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} />
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Imagem</label>
             <div className="flex gap-3">

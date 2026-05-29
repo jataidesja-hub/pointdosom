@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, Category, Promotion, StoreConfig, Order, OpeningHours } from '@/types';
+import { Product, Category, Promotion, Banner, StoreConfig, Order, OpeningHours } from '@/types';
 import { supabase } from '@/lib/supabase';
 
 const STORE_ID = (import.meta as any).env.VITE_STORE_ID || '1';
@@ -53,6 +53,10 @@ interface StoreContextType {
   updateOrderStatus: (id: string, status: Order['status']) => void;
   updateOrderPayment: (id: string, isPaid: boolean) => void;
   deleteOrder: (id: string) => void;
+  banners: Banner[];
+  addBanner: (b: Omit<Banner, 'id'>) => void;
+  updateBanner: (b: Banner) => void;
+  deleteBanner: (id: string) => void;
   uploadImage: (file: File) => Promise<string>;
 
   isLoading: boolean;
@@ -68,6 +72,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProductsState] = useState<Product[]>([]);
   const [categories, setCategoriesState] = useState<Category[]>([]);
   const [promotions, setPromotionsState] = useState<Promotion[]>([]);
+  const [banners, setBannersState] = useState<Banner[]>([]);
   const [orders, setOrdersState] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,17 +98,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           console.warn("Config não encontrada no Supabase, usando padrão:", confErr);
         }
 
-        const [prodRes, catRes, promRes, ordRes] = await Promise.all([
+        const [prodRes, catRes, promRes, ordRes, banRes] = await Promise.all([
           supabase.from('products').select('*').eq('store_id', STORE_ID),
           supabase.from('categories').select('*').eq('store_id', STORE_ID),
           supabase.from('promotions').select('*').eq('store_id', STORE_ID),
-          supabase.from('orders').select('*').eq('store_id', STORE_ID)
+          supabase.from('orders').select('*').eq('store_id', STORE_ID),
+          supabase.from('banners').select('*').eq('store_id', STORE_ID)
         ]);
 
         if (prodRes.data) setProductsState(prodRes.data);
         if (catRes.data) setCategoriesState(catRes.data);
         if (promRes.data) setPromotionsState(promRes.data);
         if (ordRes.data) setOrdersState(ordRes.data);
+        if (banRes.data) setBannersState(banRes.data);
       } catch (err) {
         console.error("Erro ao carregar do Supabase:", err);
       } finally {
@@ -336,6 +343,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setPromotions = (p: Promotion[]) => setPromotionsState(p);
 
+  // BANNERS
+  const addBanner = async (b: Omit<Banner, 'id'>) => {
+    const newB: Banner = { id: genId(), store_id: STORE_ID, ...b } as Banner;
+    setBannersState(prev => [...prev, newB]);
+    const { error } = await supabase.from('banners').insert([newB]);
+    if (error) { alert('Erro ao criar banner: ' + error.message); setBannersState(prev => prev.filter(x => x.id !== newB.id)); }
+  };
+  const updateBanner = async (b: Banner) => {
+    setBannersState(prev => prev.map(x => x.id === b.id ? b : x));
+    const { error } = await supabase.from('banners').upsert({ ...b, store_id: STORE_ID });
+    if (error) alert('Erro ao atualizar banner: ' + error.message);
+  };
+  const deleteBanner = async (id: string) => {
+    setBannersState(prev => prev.filter(x => x.id !== id));
+    await supabase.from('banners').delete().eq('id', id);
+  };
+
   // ORDERS
   const addOrder = async (o: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
     const newO: Order = { ...o, id: genId(), createdAt: new Date().toISOString(), status: 'pending' };
@@ -407,7 +431,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       categories, setCategories, addCategory, deleteCategory,
       promotions, setPromotions, addPromotion, updatePromotion, deletePromotion,
       orders, addOrder, updateOrderStatus, updateOrderPayment, deleteOrder,
-      uploadImage, isLoading, isSaving, realtimeStatus
+      uploadImage, isLoading, isSaving, realtimeStatus,
+      banners, addBanner, updateBanner, deleteBanner
 
 
     }}>

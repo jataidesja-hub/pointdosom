@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/store/StoreContext";
-import { Product, Category, Promotion } from "@/types";
+import { Product, Category, Promotion, Banner } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -81,6 +81,7 @@ export default function AdminDashboard() {
     { id: 'produtos', label: 'Produtos', icon: Package },
     { id: 'categorias', label: 'Categorias', icon: LayoutGrid },
     { id: 'promocoes', label: 'Promoções', icon: Megaphone },
+    { id: 'banners', label: 'Banners/Sorteios', icon: Radio },
     { id: 'config', label: 'Configurações', icon: Settings },
   ];
 
@@ -160,6 +161,7 @@ export default function AdminDashboard() {
         {activeTab === 'produtos' && <ProductsTab />}
         {activeTab === 'categorias' && <CategoriesTab />}
         {activeTab === 'promocoes' && <PromotionsTab />}
+        {activeTab === 'banners' && <BannersTab />}
         {activeTab === 'config' && <ConfigTab />}
       </main>
     </div>
@@ -737,6 +739,107 @@ function PromotionsTab() {
             <p className="text-xs text-zinc-400">Sem seleção = aplica a todos</p>
           </div>
           <Button onClick={handleSave} className="w-full h-12 rounded-xl mt-4"><Save className="w-5 h-5 mr-2" /> Criar Promoção</Button>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+/* ═══════════════════════ BANNERS TAB ═══════════════════════ */
+function BannersTab() {
+  const { banners, addBanner, updateBanner, deleteBanner, uploadImage } = useStore();
+  const { config } = useStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<Omit<Banner, 'id'>>({
+    title: '', description: '', imageUrl: '', link: '',
+    type: 'promo', expiresAt: null, active: true
+  });
+
+  const handleSave = () => {
+    if (!form.title) return alert('Preencha o título!');
+    addBanner({ ...form, expiresAt: form.expiresAt || null });
+    setModalOpen(false);
+    setForm({ title: '', description: '', imageUrl: '', link: '', type: 'promo', expiresAt: null, active: true });
+  };
+
+  const TYPE_LABELS: Record<string, string> = { promo: 'Promoção', sorteio: 'Sorteio', aviso: 'Aviso' };
+  const TYPE_COLORS: Record<string, string> = { promo: 'bg-emerald-100 text-emerald-700', sorteio: 'bg-purple-100 text-purple-700', aviso: 'bg-amber-100 text-amber-700' };
+
+  return (
+    <>
+      <div className="flex justify-end mb-6">
+        <Button onClick={() => setModalOpen(true)} className="rounded-xl"><Plus className="w-5 h-5 mr-2" /> Novo Banner</Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {banners.map(b => (
+          <div key={b.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm">
+            {b.imageUrl && <img src={b.imageUrl} alt={b.title} className="w-full h-40 object-cover" />}
+            <div className="p-5">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${TYPE_COLORS[b.type]}`}>{TYPE_LABELS[b.type]}</span>
+                  <h3 className="font-bold text-lg mt-1">{b.title}</h3>
+                  <p className="text-sm text-zinc-500">{b.description}</p>
+                  {b.link && <a href={b.link} target="_blank" rel="noreferrer" className="text-xs text-blue-500 underline mt-1 block truncate">{b.link}</a>}
+                  {b.expiresAt && <p className="text-xs font-bold text-orange-500 mt-1">Expira: {new Date(b.expiresAt).toLocaleString('pt-BR')}</p>}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <Button variant={b.active ? 'outline' : 'primary'} size="sm" onClick={() => updateBanner({ ...b, active: !b.active })} className="rounded-lg">
+                  {b.active ? 'Desativar' : 'Ativar'}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { if (confirm('Excluir banner?')) deleteBanner(b.id); }} className="rounded-lg text-red-500">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {banners.length === 0 && (
+          <div className="col-span-2 text-center py-16 text-zinc-400">
+            <Radio className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="font-bold">Nenhum banner cadastrado</p>
+          </div>
+        )}
+      </div>
+
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Novo Banner / Sorteio">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Tipo</label>
+            <div className="flex gap-2">
+              {(['promo', 'sorteio', 'aviso'] as const).map(t => (
+                <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
+                  className={`flex-1 py-2 rounded-xl text-xs font-black uppercase border transition-all ${form.type === t ? 'text-white border-transparent' : 'bg-zinc-50 text-zinc-500 border-zinc-200'}`}
+                  style={form.type === t ? { backgroundColor: config.primaryColor } : {}}>
+                  {TYPE_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <InputField label="Título" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: SORTEIO DE UM SUBWOOFER!" />
+          <TextArea label="Descrição" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalhe a promoção ou regras do sorteio..." />
+          <InputField label="Link (Opcional)" type="url" value={form.link || ''} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="https://..." />
+          <InputField label="Data Limite / Fim do Sorteio (Opcional)" type="datetime-local" value={form.expiresAt ? form.expiresAt.slice(0,16) : ''} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null }))} />
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Imagem</label>
+            <div className="flex gap-3">
+              <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="URL da imagem..." className="flex-1 h-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 outline-none text-sm text-zinc-900 dark:text-white" />
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment"
+                onChange={async e => {
+                  const file = e.target.files?.[0];
+                  if (file) { setIsUploading(true); try { const url = await uploadImage(file); setForm(f => ({ ...f, imageUrl: url })); } catch { alert('Erro ao subir imagem'); } finally { setIsUploading(false); } }
+                }} />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-12 rounded-xl shrink-0">
+                {isUploading ? <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-5 h-5" />}
+              </Button>
+            </div>
+            {form.imageUrl && <img src={form.imageUrl} className="w-full h-32 object-cover rounded-xl mt-2" />}
+          </div>
+          <Button onClick={handleSave} className="w-full h-12 rounded-xl"><Save className="w-5 h-5 mr-2" /> Salvar Banner</Button>
         </div>
       </Modal>
     </>

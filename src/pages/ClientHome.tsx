@@ -39,8 +39,32 @@ function PromoTimer({ expiresAt }: { expiresAt: string }) {
   return <span className="font-mono bg-black/30 px-2 py-0.5 rounded-lg ml-2 text-xs border border-white/20 animate-pulse">{timeLeft}</span>;
 }
 
+function BannerCountdown({ expiresAt }: { expiresAt: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+  useEffect(() => {
+    const calc = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft('Encerrado'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d > 0 ? d + 'd ' : ''}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+    };
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <span className="text-[10px] font-black uppercase opacity-70">Encerra em:</span>
+      <span className="font-mono font-black text-lg bg-black/30 px-3 py-1 rounded-lg tracking-widest">{timeLeft}</span>
+    </div>
+  );
+}
+
 export default function ClientHome() {
-  const { config, products, categories, promotions, isLoading } = useStore();
+  const { config, products, categories, promotions, banners, isLoading } = useStore();
   const { addOrder } = useStore();
 
   const [activeCategory, setActiveCategory] = useState("Todos");
@@ -297,6 +321,38 @@ export default function ClientHome() {
           </header>
 
           <main className="flex-1 max-w-6xl mx-auto w-full pb-24">
+
+            {/* BANNERS */}
+            {(() => {
+              const now = Date.now();
+              const activeBanners = banners.filter(b => b.active && (!b.expiresAt || new Date(b.expiresAt).getTime() > now));
+              if (!activeBanners.length) return null;
+              return (
+                <div className="flex flex-col gap-3 px-4 pt-4">
+                  {activeBanners.map(b => {
+                    const TYPE_BG: Record<string, string> = { promo: 'from-emerald-600 to-emerald-800', sorteio: 'from-purple-600 to-purple-900', aviso: 'from-amber-500 to-orange-700' };
+                    const TYPE_LABEL: Record<string, string> = { promo: '🔥 PROMOÇÃO', sorteio: '🎰 SORTEIO', aviso: '📢 AVISO' };
+                    return (
+                      <div key={b.id} className={`rounded-2xl overflow-hidden bg-gradient-to-r ${TYPE_BG[b.type]} text-white shadow-xl`}>
+                        {b.imageUrl && <img src={b.imageUrl} alt={b.title} className="w-full max-h-48 object-cover" />}
+                        <div className="p-4">
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{TYPE_LABEL[b.type]}</span>
+                          <h3 className="font-black text-xl mt-0.5">{b.title}</h3>
+                          {b.description && <p className="text-sm opacity-90 mt-1">{b.description}</p>}
+                          {b.expiresAt && <BannerCountdown expiresAt={b.expiresAt} />}
+                          {b.link && (
+                            <a href={b.link} target="_blank" rel="noreferrer"
+                              className="mt-3 inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-black transition-all">
+                              Ver mais →
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <section className="px-4 py-10 flex flex-col items-center text-center gap-6">
               <h2 className="text-4xl md:text-6xl font-black italic uppercase leading-none">{config.slogan || 'Qualidade e Confiança'}</h2>
               <div className="w-full max-w-md relative">

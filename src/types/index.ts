@@ -25,7 +25,19 @@ export interface Promotion {
   productIds: string[];
   active: boolean;
   expiresAt?: string | null;
-  showOnStart?: boolean; // New field
+  showOnStart?: boolean;
+}
+
+export interface Banner {
+  id: string;
+  store_id?: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  link?: string;
+  type: 'promo' | 'sorteio' | 'aviso';
+  expiresAt?: string | null;
+  active: boolean;
 }
 
 export interface OpeningHours {

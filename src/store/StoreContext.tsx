@@ -412,6 +412,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deleteOrder = async (id: string) => {
     const previous = orders.find(x => x.id === id);
+    if (!previous) return;
+    
+    // RESTORE STOCK
+    try {
+      for (const item of previous.items) {
+        const prod = products.find(p => p.id === item.id);
+        if (prod && prod.stock !== undefined) {
+          const newStock = prod.stock + item.quantity;
+          // Prevent restoring if it was marked as unlimited (e.g. 999 or above)
+          if (prod.stock < 990) {
+            setProductsState(prev => prev.map(p => p.id === prod.id ? { ...p, stock: newStock } : p));
+            await supabase.from('products').update({ stock: newStock }).eq('id', prod.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao retornar estoque:", err);
+    }
+
     setOrdersState(prev => prev.filter(x => x.id !== id));
     setIsSaving(true);
     const { error } = await supabase.from('orders').delete().eq('id', id);

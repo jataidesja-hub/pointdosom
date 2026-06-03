@@ -862,18 +862,19 @@ function BannersTab() {
 /* ═══════════════════════ CONFIG TAB ═══════════════════════ */
 const playAlertSound = (soundUrl: string) => {
   if (soundUrl === 'none') return;
-  if (soundUrl === 'default') {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    
+    if (soundUrl === 'default') {
       const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
+      osc1.connect(gain);
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
-      gain1.gain.setValueAtTime(0, ctx.currentTime);
-      gain1.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
       osc1.start(ctx.currentTime);
       osc1.stop(ctx.currentTime + 0.5);
 
@@ -888,10 +889,65 @@ const playAlertSound = (soundUrl: string) => {
       gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
       osc2.start(ctx.currentTime + 0.4);
       osc2.stop(ctx.currentTime + 1.2);
-    } catch(e) { console.error('Erro ao tocar som', e); }
-  } else {
-    new Audio(soundUrl).play().catch(() => {});
-  }
+    } 
+    else if (soundUrl === 'siren') {
+      const osc = ctx.createOscillator();
+      osc.connect(gain);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.4);
+      osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
+      osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 1.2);
+      osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 1.6);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime + 1.5);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.6);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 1.6);
+    }
+    else if (soundUrl === 'digital') {
+      for(let i=0; i<4; i++) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, ctx.currentTime + (i * 0.15));
+        g.gain.setValueAtTime(0, ctx.currentTime + (i * 0.15));
+        g.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (i * 0.15) + 0.02);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + (i * 0.15) + 0.1);
+        osc.start(ctx.currentTime + (i * 0.15));
+        osc.stop(ctx.currentTime + (i * 0.15) + 0.1);
+      }
+    }
+    else if (soundUrl === 'short') {
+      const osc = ctx.createOscillator();
+      osc.connect(gain);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    }
+    else if (soundUrl === 'soft') {
+      const osc = ctx.createOscillator();
+      osc.connect(gain);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 2.0);
+    }
+    else {
+      new Audio(soundUrl).play().catch(() => {});
+    }
+  } catch(e) { console.error('Erro ao tocar som', e); }
 };
 
 function ConfigTab() {
@@ -984,10 +1040,10 @@ function ConfigTab() {
             }}
               className="flex-1 h-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 outline-none focus:ring-2 ring-primary-500 text-zinc-900 dark:text-white">
               <option value="default">Padrão (Campainha)</option>
-              <option value="https://cdn.freesound.org/previews/242/242501_4414128-lq.mp3">Alarme Sirene Alto</option>
-              <option value="https://cdn.freesound.org/previews/173/173932_311243-lq.mp3">Alarme Digital</option>
-              <option value="https://cdn.freesound.org/previews/411/411420_5121236-lq.mp3">Notificação Curta</option>
-              <option value="https://cdn.freesound.org/previews/226/226223_4030612-lq.mp3">Sino Suave</option>
+              <option value="siren">Alarme Sirene Alto</option>
+              <option value="digital">Alarme Digital</option>
+              <option value="short">Notificação Curta</option>
+              <option value="soft">Sino Suave</option>
               <option value="none">Desativado</option>
             </select>
             <Button type="button" variant="outline" className="h-12 px-4 rounded-xl" onClick={() => playAlertSound(form.alertSound || 'default')}>Testar</Button>

@@ -164,35 +164,86 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             try {
               const sound = configRef.current.alertSound || 'default';
               if (sound !== 'none') {
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const gain = ctx.createGain();
+                gain.connect(ctx.destination);
+                
                 if (sound === 'default') {
-                  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                  
-                  // DING
                   const osc1 = ctx.createOscillator();
-                  const gain1 = ctx.createGain();
-                  osc1.connect(gain1);
-                  gain1.connect(ctx.destination);
+                  osc1.connect(gain);
                   osc1.type = 'sine';
                   osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
-                  gain1.gain.setValueAtTime(0, ctx.currentTime);
-                  gain1.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-                  gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                  gain.gain.setValueAtTime(0, ctx.currentTime);
+                  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
                   osc1.start(ctx.currentTime);
                   osc1.stop(ctx.currentTime + 0.5);
 
-                  // DONG
                   const osc2 = ctx.createOscillator();
-                  const gain2 = ctx.createGain();
-                  osc2.connect(gain2);
-                  gain2.connect(ctx.destination);
+                  osc2.connect(gain);
                   osc2.type = 'sine';
                   osc2.frequency.setValueAtTime(523.25, ctx.currentTime + 0.4);
-                  gain2.gain.setValueAtTime(0, ctx.currentTime + 0.4);
-                  gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.45);
-                  gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+                  gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
+                  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.45);
+                  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
                   osc2.start(ctx.currentTime + 0.4);
                   osc2.stop(ctx.currentTime + 1.2);
-                } else {
+                }
+                else if (sound === 'siren') {
+                  const osc = ctx.createOscillator();
+                  osc.connect(gain);
+                  osc.type = 'square';
+                  osc.frequency.setValueAtTime(600, ctx.currentTime);
+                  osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.4);
+                  osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
+                  osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 1.2);
+                  osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 1.6);
+                  gain.gain.setValueAtTime(0, ctx.currentTime);
+                  gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.1);
+                  gain.gain.setValueAtTime(0.1, ctx.currentTime + 1.5);
+                  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.6);
+                  osc.start(ctx.currentTime);
+                  osc.stop(ctx.currentTime + 1.6);
+                }
+                else if (sound === 'digital') {
+                  for(let i=0; i<4; i++) {
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.connect(g);
+                    g.connect(ctx.destination);
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime + (i * 0.15));
+                    g.gain.setValueAtTime(0, ctx.currentTime + (i * 0.15));
+                    g.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (i * 0.15) + 0.02);
+                    g.gain.linearRampToValueAtTime(0, ctx.currentTime + (i * 0.15) + 0.1);
+                    osc.start(ctx.currentTime + (i * 0.15));
+                    osc.stop(ctx.currentTime + (i * 0.15) + 0.1);
+                  }
+                }
+                else if (sound === 'short') {
+                  const osc = ctx.createOscillator();
+                  osc.connect(gain);
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(880, ctx.currentTime);
+                  osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.15);
+                  gain.gain.setValueAtTime(0, ctx.currentTime);
+                  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+                  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                  osc.start(ctx.currentTime);
+                  osc.stop(ctx.currentTime + 0.15);
+                }
+                else if (sound === 'soft') {
+                  const osc = ctx.createOscillator();
+                  osc.connect(gain);
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(440, ctx.currentTime);
+                  gain.gain.setValueAtTime(0, ctx.currentTime);
+                  gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+                  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+                  osc.start(ctx.currentTime);
+                  osc.stop(ctx.currentTime + 2.0);
+                }
+                else {
                   new Audio(sound).play().catch(() => {});
                 }
               }

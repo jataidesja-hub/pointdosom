@@ -417,7 +417,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // RESTORE STOCK
     try {
       for (const item of previous.items) {
-        const prod = products.find(p => p.id === item.id);
+        const prod = products.find(p => p.id === item.product.id);
         if (prod && prod.stock !== undefined) {
           const newStock = prod.stock + item.quantity;
           // Prevent restoring if it was marked as unlimited (e.g. 999 or above)

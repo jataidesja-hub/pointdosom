@@ -1,4 +1,4 @@
-const SHEETS_URL = process.env.NEXT_PUBLIC_SHEETS_URL;
+const SHEETS_URL = (import.meta as any).env?.VITE_SHEETS_URL;
 
 export async function fetchFromSheets(action: string, method: 'GET' | 'POST' = 'GET', data?: any) {
   if (!SHEETS_URL) {

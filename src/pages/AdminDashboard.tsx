@@ -101,8 +101,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-6 flex flex-col shrink-0">
+      {/* SIDEBAR — desktop only */}
+      <aside className="hidden lg:flex w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-6 flex-col shrink-0">
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: config.primaryColor }}>
             <Store className="w-5 h-5" />
@@ -112,14 +112,11 @@ export default function AdminDashboard() {
             <h2 className="font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-widest text-sm">Administração</h2>
           </div>
         </div>
-
         <nav className="flex-1 space-y-1.5">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === tab.id
-                  ? 'text-white shadow-lg'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                activeTab === tab.id ? 'text-white shadow-lg' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
               style={activeTab === tab.id ? { backgroundColor: config.primaryColor } : {}}
             >
@@ -128,14 +125,13 @@ export default function AdminDashboard() {
             </button>
           ))}
         </nav>
-
         <Button variant="ghost" onClick={handleLogout} className="mt-auto text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 justify-start">
           <LogOut className="w-5 h-5 mr-3" /> Sair
         </Button>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-8 overflow-auto relative">
+      <main className="flex-1 p-4 lg:p-8 overflow-auto relative pb-24 lg:pb-8">
         {isLoading && (
           <div className="absolute inset-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center">
              <div className="flex flex-col items-center gap-4">
@@ -145,33 +141,29 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex items-center justify-between mb-6">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-zinc-900 dark:text-white capitalize italic">
-                {tabs.find(t => t.id === activeTab)?.label}
-              </h1>
-              {isLoading && (
-                <span className="flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
-                  <Save className="w-3 h-3" /> Sincronizando...
-                </span>
-              )}
-            </div>
-            <p className="text-zinc-500 dark:text-zinc-400">Gerenciamento completo da sua loja</p>
+            <h1 className="text-2xl lg:text-3xl font-black text-zinc-900 dark:text-white capitalize italic">
+              {tabs.find(t => t.id === activeTab)?.label}
+            </h1>
+            <p className="text-xs text-zinc-400 hidden lg:block">Gerenciamento completo da sua loja</p>
           </div>
-          <div className="flex items-center gap-3">
-             <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${realtimeStatus === 'SUBSCRIBED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 animate-pulse'}`}>
-                <Radio className={`w-3 h-3 ${realtimeStatus === 'SUBSCRIBED' ? 'animate-pulse' : ''}`} />
-                {realtimeStatus === 'SUBSCRIBED' ? 'Sistema Online' : 'Desconectado'}
-              </div>
-              <button onClick={() => window.open('/', '_blank')} className="p-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-xl transition-all" title="Ver Loja">
-                <Eye className="w-5 h-5" />
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${realtimeStatus === 'SUBSCRIBED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 animate-pulse'}`}>
+              <Radio className={`w-3 h-3 ${realtimeStatus === 'SUBSCRIBED' ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{realtimeStatus === 'SUBSCRIBED' ? 'Online' : 'Offline'}</span>
+            </div>
+            <button onClick={() => window.open('/', '_blank')} className="p-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-xl transition-all" title="Ver Loja">
+              <Eye className="w-5 h-5" />
+            </button>
+            {installPrompt && (
+              <button onClick={handleInstall} className="flex items-center gap-1.5 px-3 py-2 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all" style={{ backgroundColor: config.primaryColor }}>
+                <Smartphone className="w-4 h-4" /> <span className="hidden sm:inline">Instalar ADM</span>
               </button>
-              {installPrompt && (
-                <button onClick={handleInstall} className="flex items-center gap-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all" title="Instalar App ADM">
-                  <Smartphone className="w-4 h-4" /> Instalar ADM
-                </button>
-              )}
+            )}
+            <button onClick={handleLogout} className="lg:hidden p-2.5 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-xl transition-all">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -183,6 +175,21 @@ export default function AdminDashboard() {
         {activeTab === 'banners' && <BannersTab />}
         {activeTab === 'config' && <ConfigTab />}
       </main>
+
+      {/* BOTTOM NAV — mobile only */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 h-16 safe-area-pb">
+        {tabs.map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all ${
+              activeTab === tab.id ? 'text-white' : 'text-zinc-400'
+            }`}
+            style={activeTab === tab.id ? { color: config.primaryColor } : {}}
+          >
+            <tab.icon className="w-5 h-5" />
+            <span className="text-[9px] font-black uppercase tracking-wider leading-none">{tab.label.split('/')[0]}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -406,7 +413,8 @@ function ProductsTab() {
       </div>
 
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full text-left min-w-[600px]">
           <thead>
             <tr className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-800">
               <th className="p-4">Foto</th>
@@ -451,6 +459,7 @@ function ProductsTab() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Produto' : 'Novo Produto'}>

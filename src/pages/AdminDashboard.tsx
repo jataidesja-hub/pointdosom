@@ -55,6 +55,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const { config, isLoading, realtimeStatus } = useStore();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
 
   const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -177,18 +178,38 @@ export default function AdminDashboard() {
       </main>
 
       {/* BOTTOM NAV — mobile only */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 h-16 safe-area-pb">
-        {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all ${
-              activeTab === tab.id ? 'text-white' : 'text-zinc-400'
-            }`}
+      {showMoreMenu && (
+        <div className="lg:hidden fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)}>
+          <div className="absolute bottom-16 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 p-4 grid grid-cols-3 gap-3" onClick={e => e.stopPropagation()}>
+            {tabs.slice(4).map((tab) => (
+              <button key={tab.id} onClick={() => { setActiveTab(tab.id); setShowMoreMenu(false); }}
+                className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${activeTab === tab.id ? 'text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}
+                style={activeTab === tab.id ? { backgroundColor: config.primaryColor, color: 'white' } : {}}
+              >
+                <tab.icon className="w-6 h-6" />
+                <span className="text-[10px] font-black uppercase text-center leading-tight">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-stretch h-16">
+        {tabs.slice(0, 4).map((tab) => (
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setShowMoreMenu(false); }}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all ${activeTab === tab.id ? '' : 'text-zinc-400'}`}
             style={activeTab === tab.id ? { color: config.primaryColor } : {}}
           >
             <tab.icon className="w-5 h-5" />
-            <span className="text-[9px] font-black uppercase tracking-wider leading-none">{tab.label.split('/')[0]}</span>
+            <span className="text-[9px] font-bold uppercase leading-none">{tab.label.split('/')[0]}</span>
           </button>
         ))}
+        <button onClick={() => setShowMoreMenu(v => !v)}
+          className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all ${showMoreMenu || tabs.slice(4).some(t => t.id === activeTab) ? '' : 'text-zinc-400'}`}
+          style={showMoreMenu || tabs.slice(4).some(t => t.id === activeTab) ? { color: config.primaryColor } : {}}
+        >
+          <LayoutGrid className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase leading-none">Mais</span>
+        </button>
       </nav>
     </div>
   );

@@ -16,19 +16,20 @@ const DEFAULT_OPENING_HOURS: OpeningHours = {
 };
 
 const DEFAULT_CONFIG: StoreConfig = {
-  name: 'Minha Loja',
+  name: 'Point do SOM',
   font: 'Inter',
-  primaryColor: '#0284c7',
+  primaryColor: '#ef4444',
   logoUrl: '',
-  address: '',
-  lat: 0,
-  lng: 0,
-  deliveryFeePerKm: 2.5,
-  slogan: 'O melhor sabor da cidade!',
-  whatsapp: '',
+  address: 'Q. 16 - Res. Itaipu, Goiânia - GO, 74356-048, Brasil',
+  lat: -16.7445258,
+  lng: -49.336495,
+  deliveryFeePerKm: 2,
+  slogan: 'As melhores porções da região!',
+  whatsapp: '5562991090176',
   pixKey: '',
   openingHours: DEFAULT_OPENING_HOURS,
   informativeText: '',
+  alertSound: 'default',
 };
 
 interface StoreContextType {
@@ -50,9 +51,10 @@ interface StoreContextType {
   deletePromotion: (id: string) => void;
   orders: Order[];
   addOrder: (o: Omit<Order, 'id' | 'createdAt' | 'status'>) => void;
-  updateOrderStatus: (id: string, status: Order['status']) => void;
-  updateOrderPayment: (id: string, isPaid: boolean) => void;
-  deleteOrder: (id: string) => void;
+  updateOrderStatus: (id: string, status: Order['status']) => Promise<void>;
+  updateOrderPayment: (id: string, isPaid: boolean) => Promise<void>;
+  updateOrderFee: (id: string, fee: number) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   banners: Banner[];
   addBanner: (b: Omit<Banner, 'id'>) => void;
   updateBanner: (b: Banner) => void;
@@ -157,38 +159,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setOrdersState(prev => {
             if (prev.some(o => o.id === payload.new.id)) return prev;
             
-            // Som de "Ding-Dong" Sintetizado (Campainha)
-          try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            
-            // DING (Nota mais alta)
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(659.25, ctx.currentTime); // Mi (E5)
-            gain1.gain.setValueAtTime(0, ctx.currentTime);
-            gain1.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-            osc1.start(ctx.currentTime);
-            osc1.stop(ctx.currentTime + 0.5);
+            // Play alert sound based on config
+            try {
+              const sound = configRef.current.alertSound || 'default';
+              if (sound !== 'none') {
+                if (sound === 'default') {
+                  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                  
+                  // DING
+                  const osc1 = ctx.createOscillator();
+                  const gain1 = ctx.createGain();
+                  osc1.connect(gain1);
+                  gain1.connect(ctx.destination);
+                  osc1.type = 'sine';
+                  osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
+                  gain1.gain.setValueAtTime(0, ctx.currentTime);
+                  gain1.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+                  gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                  osc1.start(ctx.currentTime);
+                  osc1.stop(ctx.currentTime + 0.5);
 
-            // DONG (Nota mais baixa, soa logo após o Ding)
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(523.25, ctx.currentTime + 0.4); // Dó (C5)
-            gain2.gain.setValueAtTime(0, ctx.currentTime + 0.4);
-            gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.45);
-            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
-            osc2.start(ctx.currentTime + 0.4);
-            osc2.stop(ctx.currentTime + 1.2);
-          } catch(e) {
-            console.error("Erro ao tocar som:", e);
-          }
+                  // DONG
+                  const osc2 = ctx.createOscillator();
+                  const gain2 = ctx.createGain();
+                  osc2.connect(gain2);
+                  gain2.connect(ctx.destination);
+                  osc2.type = 'sine';
+                  osc2.frequency.setValueAtTime(523.25, ctx.currentTime + 0.4);
+                  gain2.gain.setValueAtTime(0, ctx.currentTime + 0.4);
+                  gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.45);
+                  gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+                  osc2.start(ctx.currentTime + 0.4);
+                  osc2.stop(ctx.currentTime + 1.2);
+                } else {
+                  new Audio(sound).play().catch(() => {});
+                }
+              }
+            } catch(e) {
+              console.error("Erro ao tocar som:", e);
+            }
           
           return [...prev, payload.new as Order];
         });
@@ -410,6 +419,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateOrderFee = async (id: string, fee: number) => {
+    const previous = orders.find(x => x.id === id);
+    if (!previous) return;
+    const total = previous.subtotal + fee;
+    setOrdersState(prev => prev.map(x => x.id === id ? { ...x, deliveryFee: fee, total } : x));
+    setIsSaving(true);
+    const { error } = await supabase.from('orders').update({ deliveryFee: fee, total }).eq('id', id);
+    setIsSaving(false);
+    if (error) {
+      alert('Erro ao atualizar taxa: ' + error.message);
+      setOrdersState(prev => prev.map(x => x.id === id ? previous : x));
+    }
+  };
+
   const deleteOrder = async (id: string) => {
     const previous = orders.find(x => x.id === id);
     if (!previous) return;
@@ -449,7 +472,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       products, setProducts, addProduct, updateProduct, deleteProduct,
       categories, setCategories, addCategory, deleteCategory,
       promotions, setPromotions, addPromotion, updatePromotion, deletePromotion,
-      orders, addOrder, updateOrderStatus, updateOrderPayment, deleteOrder,
+      orders, addOrder, updateOrderStatus, updateOrderPayment, updateOrderFee, deleteOrder,
       uploadImage, isLoading, isSaving, realtimeStatus,
       banners, addBanner, updateBanner, deleteBanner
 

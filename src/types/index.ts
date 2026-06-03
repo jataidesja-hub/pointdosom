@@ -62,6 +62,8 @@ export interface StoreConfig {
   whatsapp: string;
   instagram?: string;
   pixKey?: string;
+  cnpj?: string;
+  alertSound?: string;
   openingHours?: OpeningHours;
   informativeText?: string; // New field
 }

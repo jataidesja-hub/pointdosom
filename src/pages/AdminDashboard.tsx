@@ -930,11 +930,43 @@ function ConfigTab() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <InputField label="Instagram (@usuario ou link)" value={(form as any).instagram || ''} onChange={e => setForm(f => ({ ...f, instagram: e.target.value } as any))} placeholder="@pointdosom" />
+          <InputField label="CNPJ (Para Impressão)" value={form.cnpj || ''} onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))} placeholder="00.000.000/0001-00" />
         </div>
         <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
           <h3 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-4"><Megaphone className="w-5 h-5" /> Informativos</h3>
           <p className="text-xs text-zinc-500 mb-2">Este texto aparecerá no topo do aplicativo para todos os clientes.</p>
           <TextArea label="Texto Informativo" value={form.informativeText || ''} onChange={e => setForm(f => ({ ...f, informativeText: e.target.value }))} placeholder="Ex: Informamos que no dia 20/04 não abriremos devido ao feriado." />
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-6 space-y-4">
+        <h3 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2"><Radio className="w-5 h-5" /> Notificações de Pedido</h3>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Som de Alerta</label>
+          <div className="flex gap-2">
+            <select value={form.alertSound || 'default'} onChange={e => {
+              setForm(f => ({ ...f, alertSound: e.target.value }));
+              if (e.target.value !== 'none') {
+                const audio = new Audio(e.target.value === 'default' ? '/notification.mp3' : e.target.value);
+                audio.play().catch(() => {});
+              }
+            }}
+              className="flex-1 h-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 outline-none focus:ring-2 ring-primary-500 text-zinc-900 dark:text-white">
+              <option value="default">Padrão (Campainha)</option>
+              <option value="https://cdn.freesound.org/previews/242/242501_4414128-lq.mp3">Alarme Sirene Alto</option>
+              <option value="https://cdn.freesound.org/previews/173/173932_311243-lq.mp3">Alarme Digital</option>
+              <option value="https://cdn.freesound.org/previews/411/411420_5121236-lq.mp3">Notificação Curta</option>
+              <option value="https://cdn.freesound.org/previews/226/226223_4030612-lq.mp3">Sino Suave</option>
+              <option value="none">Desativado</option>
+            </select>
+            <Button type="button" variant="outline" className="h-12 px-4 rounded-xl" onClick={() => {
+              if (form.alertSound && form.alertSound !== 'none') {
+                new Audio(form.alertSound === 'default' ? '/notification.mp3' : form.alertSound).play().catch(() => {});
+              } else if (!form.alertSound) {
+                new Audio('/notification.mp3').play().catch(() => {});
+              }
+            }}>Testar</Button>
+          </div>
         </div>
       </div>
 
@@ -1221,8 +1253,10 @@ function DashboardTab() {
 
 /* ═══════════════════════ ORDERS TAB ═══════════════════════ */
 function OrdersTab() {
-  const { orders, updateOrderStatus, updateOrderPayment, deleteOrder, config } = useStore();
+  const { orders, updateOrderStatus, updateOrderPayment, updateOrderFee, deleteOrder, config } = useStore();
   const [subTab, setSubTab] = useState<'pending' | 'finished'>('pending');
+  const [editingFeeId, setEditingFeeId] = useState<string | null>(null);
+  const [feeInput, setFeeInput] = useState('');
 
   const filteredList = useMemo(() => {
     return [...orders].reverse().filter(o => {
@@ -1269,6 +1303,7 @@ function OrdersTab() {
         <body>
           <div class="header">
             <strong>${config.name}</strong><br/>
+            ${config.cnpj ? `CNPJ: ${config.cnpj}<br/>` : ''}
             ${config.slogan || ''}<br/>
             ${config.address || ''}
           </div>
@@ -1399,7 +1434,22 @@ function OrdersTab() {
             ))}
             <div className="border-t border-zinc-200 dark:border-zinc-800 mt-3 pt-3 flex flex-col gap-1">
               <div className="flex justify-between text-xs text-zinc-500"><span>Subtotal</span><span>{formatCurrency(o.subtotal)}</span></div>
-              <div className="flex justify-between text-xs text-zinc-500"><span>Taxa de entrega</span><span>{formatCurrency(o.deliveryFee)}</span></div>
+              <div className="flex justify-between items-center text-xs text-zinc-500">
+                <span>Taxa de entrega</span>
+                {editingFeeId === o.id ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-zinc-400">R$</span>
+                    <input type="number" step="0.01" value={feeInput} onChange={e => setFeeInput(e.target.value)} 
+                      className="w-16 h-6 px-1 text-right border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                      autoFocus onBlur={() => { updateOrderFee(o.id, parseFloat(feeInput) || 0); setEditingFeeId(null); }}
+                      onKeyDown={e => { if (e.key === 'Enter') { updateOrderFee(o.id, parseFloat(feeInput) || 0); setEditingFeeId(null); } }} />
+                  </div>
+                ) : (
+                  <button onClick={() => { setFeeInput(o.deliveryFee.toString()); setEditingFeeId(o.id); }} className="flex items-center gap-1 hover:text-primary-500 transition-colors">
+                    {formatCurrency(o.deliveryFee)} <Edit className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

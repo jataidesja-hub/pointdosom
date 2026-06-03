@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { Product, Category, Promotion, Banner, StoreConfig, Order, OpeningHours } from '@/types';
 import { supabase } from '@/lib/supabase';
 
@@ -79,7 +79,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState('connecting');
-
+  const configRef = useRef(config);
+  useEffect(() => { configRef.current = config; }, [config]);
 
   // Initial load
   useEffect(() => {

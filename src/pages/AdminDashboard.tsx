@@ -386,7 +386,7 @@ function ProductsTab() {
       price: parseFloat(form.price),
       stock: parseFloat(form.stock) || 0,
       category: form.category,
-      imageUrl: form.imageUrl.trim(),
+      imageUrl: form.mediaUrls[0] || '',
       mediaUrls: form.mediaUrls,
       externalUrl: isExternal ? form.externalUrl.trim() : undefined,
     };
@@ -540,90 +540,6 @@ function ProductsTab() {
             </select>
           </div>
 
-          {/* IMAGE URL & UPLOAD */}
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5" /> Foto do Produto
-            </label>
-            
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <input
-                  type="url"
-                  value={form.imageUrl}
-                  onChange={e => { setForm(f => ({ ...f, imageUrl: e.target.value })); setImagePreviewError(false); }}
-                  placeholder="URL da imagem ou faça upload..."
-                  className="w-full h-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-4 pr-12 outline-none focus:ring-2 ring-primary-500 transition-all text-zinc-900 dark:text-white text-sm"
-                />
-                {form.imageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => { setForm(f => ({ ...f, imageUrl: '' })); setImagePreviewError(false); }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-red-500 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*"
-                capture="environment"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    try {
-                      setIsUploading(true);
-                      const url = await uploadImage(file);
-                      setForm(f => ({ ...f, imageUrl: url }));
-                      setImagePreviewError(false);
-                    } catch (err) {
-                      alert('Erro ao subir imagem');
-                    } finally {
-                      setIsUploading(false);
-                    }
-                  }
-                }}
-              />
-              
-              <Button 
-                variant="outline" 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="h-12 rounded-xl shrink-0 border-zinc-200 dark:border-zinc-800"
-              >
-                {isUploading ? <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <Upload className="w-5 h-5" />}
-              </Button>
-            </div>
-
-            {form.imageUrl && !imagePreviewError && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 relative group aspect-video">
-                <img
-                  src={form.imageUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={() => setImagePreviewError(true)}
-                />
-              </div>
-            )}
-            {form.imageUrl && imagePreviewError && (
-              <div className="mt-2 rounded-xl border-2 border-dashed border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-4 text-center">
-                <ImageIcon className="w-8 h-8 mx-auto text-red-400 mb-2" />
-                <p className="text-xs text-red-500 font-bold">Não foi possível carregar a imagem</p>
-                <p className="text-[10px] text-red-400 mt-1">Verifique se a URL está correta e acessível</p>
-              </div>
-            )}
-            {!form.imageUrl && (
-              <div className="mt-2 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 text-center">
-                <ImageIcon className="w-10 h-10 mx-auto text-zinc-300 dark:text-zinc-700 mb-2" />
-                <p className="text-xs text-zinc-400 font-medium">Nenhuma imagem definida</p>
-                <p className="text-[10px] text-zinc-400 mt-1">Cole a URL acima para adicionar uma foto</p>
-              </div>
-            )}
           </div>
 
           {/* GALLERY */}

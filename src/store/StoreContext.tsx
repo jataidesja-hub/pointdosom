@@ -144,6 +144,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (payload.eventType === 'INSERT') {
           setCategoriesState(prev => prev.some(c => c.id === payload.new.id) ? prev : [...prev, payload.new as Category]);
         }
+        if (payload.eventType === 'UPDATE') setCategoriesState(prev => prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } as Category : c));
         if (payload.eventType === 'DELETE') setCategoriesState(prev => prev.filter(c => c.id !== payload.old.id));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions', filter: `store_id=eq.${STORE_ID}` }, payload => {
@@ -153,6 +154,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         if (payload.eventType === 'UPDATE') setPromotionsState(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } as Promotion : p));
         if (payload.eventType === 'DELETE') setPromotionsState(prev => prev.filter(p => p.id !== payload.old.id));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners', filter: `store_id=eq.${STORE_ID}` }, payload => {
+        console.log('[Real-time] Banners changed', payload.eventType);
+        if (payload.eventType === 'INSERT') {
+          setBannersState(prev => prev.some(b => b.id === payload.new.id) ? prev : [...prev, payload.new as Banner]);
+        }
+        if (payload.eventType === 'UPDATE') setBannersState(prev => prev.map(b => b.id === payload.new.id ? { ...b, ...payload.new } as Banner : b));
+        if (payload.eventType === 'DELETE') setBannersState(prev => prev.filter(b => b.id !== payload.old.id));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${STORE_ID}` }, payload => {
         console.log('[Real-time] Orders changed', payload.eventType);

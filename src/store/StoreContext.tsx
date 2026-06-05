@@ -283,9 +283,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const uploadImage = async (file: File): Promise<string> => {
     setIsSaving(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      let finalFile = file;
+      // Compress only images
+      if (file.type.startsWith('image/')) {
+        finalFile = await new Promise<File>((resolve) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target?.result as string;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let { width, height } = img;
+              const max = 1200;
+              if (width > height && width > max) { height *= max / width; width = max; }
+              else if (height > max) { width *= max / height; height = max; }
+              canvas.width = width; canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(img, 0, 0, width, height);
+              canvas.toBlob((blob) => {
+                if (blob) resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }));
+                else resolve(file);
+              }, 'image/jpeg', 0.7);
+            };
+            img.onerror = () => resolve(file);
+          };
+          reader.onerror = () => resolve(file);
+        });
+      }
+
+      const fileExt = finalFile.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const { data, error } = await supabase.storage.from('images').upload(fileName, file);
+      const { error } = await supabase.storage.from('images').upload(fileName, finalFile);
       
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);

@@ -463,7 +463,7 @@ export default function ClientHome() {
                       className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm flex flex-col group hover:shadow-lg transition-all duration-200"
                     >
                       <div className="aspect-square relative overflow-hidden">
-                        <img src={p.imageUrl || '/placeholder.png'} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={p.imageUrl || '/placeholder.png'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
                           <ExternalLink className="w-2.5 h-2.5" /> Ver
                         </div>
@@ -486,7 +486,7 @@ export default function ClientHome() {
                     /* ── CARD NORMAL (carrinho) ── */
                     <div key={p.id} className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm flex flex-col">
                       <div onClick={() => setViewingProduct(p)} className="cursor-pointer aspect-square relative overflow-hidden">
-                        <img src={p.imageUrl || '/placeholder.png'} loading="lazy" decoding="async" className={`w-full h-full object-cover ${(p.stock ?? 0) <= 0 ? 'grayscale opacity-50' : ''}`} />
+                        <img src={p.imageUrl || '/placeholder.png'} className={`w-full h-full object-cover ${(p.stock ?? 0) <= 0 ? 'grayscale opacity-50' : ''}`} />
                         {pr && <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest">Oferta</div>}
                       </div>
                       <div className="p-3 flex-1 flex flex-col">

@@ -483,12 +483,12 @@ export default function ClientHome() {
                   ) : (
                     /* ── CARD NORMAL (carrinho) ── */
                     <div key={p.id} className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-                      <div onClick={() => { if ((p.stock ?? 0) > 0 && isOpen) { addToCart(p); setCheckoutOpen(true); } }} className="cursor-pointer aspect-square relative overflow-hidden">
+                      <div onClick={() => setViewingProduct(p)} className="cursor-pointer aspect-square relative overflow-hidden">
                         <img src={optimizeImageUrl(p.imageUrl, 400) || '/placeholder.png'} className={`w-full h-full object-cover ${(p.stock ?? 0) <= 0 ? 'grayscale opacity-50' : ''}`} />
                         {pr && <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest">Oferta</div>}
                       </div>
                       <div className="p-3 flex-1 flex flex-col">
-                        <h3 onClick={() => { if ((p.stock ?? 0) > 0 && isOpen) { addToCart(p); setCheckoutOpen(true); } }} className="font-black text-sm uppercase leading-tight line-clamp-2 cursor-pointer mb-2">{p.name}</h3>
+                        <h3 onClick={() => setViewingProduct(p)} className="font-black text-sm uppercase leading-tight line-clamp-2 cursor-pointer mb-2">{p.name}</h3>
                         <div className="mt-auto flex items-center justify-between">
                           <div className="flex flex-col">
                             {pr ? (<><span className="text-[10px] text-zinc-400 line-through leading-none">{formatCurrency(p.price)}</span><span className="text-sm sm:text-lg font-black leading-none" style={{ color: config.primaryColor }}>{formatCurrency(pr)}</span></>) : (<span className="text-sm sm:text-lg font-black leading-none" style={{ color: config.primaryColor }}>{formatCurrency(p.price)}</span>)}
@@ -643,7 +643,7 @@ export default function ClientHome() {
                   <ExternalLink className="w-6 h-6" /> Ver no Site
                 </a>
               ) : (
-                <button onClick={() => { addToCart(viewingProduct); setViewingProduct(null); }} disabled={(viewingProduct.stock ?? 0) <= 0 || !isOpen} className="w-full h-16 rounded-2xl text-white font-black uppercase text-xl shadow-2xl disabled:grayscale" style={{ backgroundColor: config.primaryColor }}>{!isOpen ? 'Loja Fechada' : 'Adicionar ao Carrinho'}</button>
+                <button onClick={() => { addToCart(viewingProduct); setViewingProduct(null); setCheckoutOpen(true); }} disabled={(viewingProduct.stock ?? 0) <= 0 || !isOpen} className="w-full h-16 rounded-2xl text-white font-black uppercase text-xl shadow-2xl disabled:grayscale" style={{ backgroundColor: config.primaryColor }}>{!isOpen ? 'Loja Fechada' : 'Finalizar Compra'}</button>
               )}
             </div>
           </div>

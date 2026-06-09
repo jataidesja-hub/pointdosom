@@ -312,13 +312,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      const fileExt = finalFile.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const { error } = await supabase.storage.from('images').upload(fileName, finalFile);
-      
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
-      return publicUrl;
+      // Upload para Cloudinary (sem egress Supabase)
+      const formData = new FormData();
+      formData.append('file', finalFile);
+      formData.append('upload_preset', 'ml_default');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/daffg0p8g/image/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Erro no upload Cloudinary');
+      const data = await res.json();
+      return data.secure_url as string;
     } catch (err) {
       console.error(err);
       throw err;
